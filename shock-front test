@@ -1,0 +1,122 @@
+#model to test the distance to the shock front
+import cmath as cm
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+#imaginary i
+i=cm.sqrt(-1)
+pi=np.pi
+#phase of orbit
+phi=np.arange(start=0, stop=2*pi, step=(2*pi)/360)
+#speed of light (m/s)
+c=2.9979*10**8
+#semi major axis (m)
+a=1296.58*c
+#eccentricty
+e=0.869931
+#spindown luminosity
+Lp=8*10**28
+#mass outflow of be star
+M_1=(10**-8)*(1.989*10**30)*(3.154*10**7)
+#velcotiy of stellar surface
+v_o=10**5
+#fp fraction of sky (1)
+fp=1
+#fraction of sky fw
+fw=1
+#magnetization
+sigma=0.02
+#opacity k????
+k=1
+#mass and charge of electron
+m_e=9.1*10**-31
+e_c=1.6*10**-19
+#pitch angle
+alpha=pi/2
+#realtivistic factor gamma
+gamma=10
+#kinetic energy of relativistic electrons
+E=gamma*m_e*(c**2)
+#spectral index
+alpha_s=2.4
+#kparsec in m
+kpc=3.086*10**19
+#distance to system in kpc
+D=2.6*kpc
+
+
+
+#hold=[]
+#hold3=[]
+
+
+#labda factor
+lambd=(Lp*fw)/(M_1*c*fp*v_o)
+#separation of binary
+d=(a*(1+e**2))/(1+e*np.cos(phi))
+#distance to shock front
+r_s=(d)/(1+(1/np.sqrt(lambd)))
+R_s=d-r_s
+#magnetic field 
+B=np.sqrt(sigma/1+sigma)*np.sqrt(Lp/c*fp)*(1/r_s)
+#gyro freq
+v_g=(e_c*B)/(2*pi*m_e)
+#critical frequency
+v_c=((E/(m_e*(c**2)))**2)*v_g
+
+#user input for frequency
+v=v_c
+
+#v=np.arange(v_c, 10*v_c, v_c/100)
+#for x in v:
+jv=(k*(B**(alpha_s+1))*(v**-alpha_s))
+#hold3.append(sum(hold))
+#hold[:]=[]
+
+#hold2=np.array(hold3)
+#emitivity of electrons from power law
+#jv=k*(B**(alpha_s+1))*hold2
+#drift velocity
+V_d=10**7
+
+#angle APC
+#squig=2*pi/3
+
+#angles of the cone
+#theta_1=pi/6
+#theta_2=pi/3
+
+#ep min
+#ep_min=10*m_e*c**2
+
+#surface SU
+#S_u=2*pi*((R_s)**2)*(np.cos(theta_1)-np.cos(theta_2))
+
+#sig
+#SIG=2*pi*(1-np.cos(squig))
+
+#k_e 
+#k_e=(0.4*Lp*SIG*ep_min**0.4)/(4*pi*S_u*V_d)
+
+#meu(l) co-efficient of self absorption
+#meu=(1.1*10**-6)*k_e*(B**2.2)*v_c**-3.2
+
+#Fz=quad(meu, low, high, args=())
+
+#total flux
+I_e=(1/(4*pi*D**2))*jv
+
+# plotting the points 
+plt.plot(phi/pi, I_e)
+plt.xlabel('phase in terms of pi')
+plt.ylabel('joules/s^2')
+
+#f,ax=plt.subplots(figsize=(20,10))
+#ax.plot(phi/pi,r_s)
+#ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+
+# function to show the plot 
+plt.show() 
