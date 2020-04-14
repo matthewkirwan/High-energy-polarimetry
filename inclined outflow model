@@ -1,0 +1,137 @@
+#better model
+#hopefully this model will use more solid maths
+import cmath as cm
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+#imaginary i
+i=cm.sqrt(-1)
+pi=np.pi
+#phase of orbit
+theta=np.arange(start=0, stop=2*pi, step=(2*pi)/360)
+phi=theta+pi
+#speed of light (m/s)
+c=2.9979*10**10
+#permitivity of free space
+epsilon=8.85418782*10**-12
+#inclination
+I=0.610865
+#semi major axis (m)
+a=(1296.58*c)/np.sin(I)
+#eccentricty
+e=0.869931
+#spindown luminosity
+Lp=8*10**35
+#mass outflow of be star
+M_1=(10**-8)*(1.989*10**33)/(3.154*10**7)
+#velcotiy of stellar surface
+v_o=10**7
+#fp fraction of sky (1)
+fp=1
+#fraction of sky fw
+fw=0.125
+#magnetization
+sigma=0.02
+#mass and charge of electron
+m_e=9.1*10**-29
+e_c=1.6*10**-19
+#pitch angle
+alpha=pi/2
+#realtivistic factor gamma
+gamma=10**6
+#kinetic energy of relativistic electrons
+E=gamma*m_e*(c**2)
+#kparsec in m
+kpc=3.086*10**21
+
+#distance to system in kpc
+D=2.6*kpc
+Rstar=10*69500000000
+
+#spectral index
+alpha_s=1.9
+#power law constant
+k2=2*10**6
+px=[0.0000796374457120316,0.00014178744537259044,0.0004494472104065501,0.004833185979082796,0.00860506118519621,
+0.025487185471333655,0.14880576056262945,0.3595577683252391,1.397103472379879,5.615972406771629,22.574667300694117,
+90.7439650384574,377.3554636042704,3199.999999999989]
+py=[0.002462890320398578, 0.0013295759898850137, 0.00028501190286086, 0.000007847642926715469, 0.0000028129295761076214,
+7.401943651057152e-7, 3.079525004075132e-7, 4.168746010311817e-8, 8.483707120359404e-9, 1.1462015937257032e-9, 
+1.1977975827167921e-11, 7.509186629382716e-13, 1.310289034995999e-13, 2.7956514181875228e-15]
+
+MeV=2.41799050402417E+20
+
+param=700
+sigd=(30*pi)/180
+theta1=0
+theta2=2*pi
+
+
+jv1=[]
+r=[]
+r1=[]
+r2=[]
+RSTAR=[]
+flux=[]
+b1=[]
+for n in phi:
+	#labda factor
+	lam=(Lp*fw)/(M_1*c*fp*v_o)#*(1+sigma))
+	disk=param*(np.exp(-(((n-pi)-theta1)**2)/(2*sigd**2))+np.exp(-(((n-pi)-theta2)**2)/(2*sigd**2)))
+	massflow=100+disk
+	lambd=(40*fw)/(fp*massflow)
+	#separation of binary
+	d=(a*(1-(e**2)))/(1+(e*np.cos(n)))
+	#distance to shock front
+	r_s=((d)*(np.sqrt(lambd)))/(1+(np.sqrt(lambd)))
+	r3=(d*(lambd-np.sqrt(lambd)))/(lambd-1)
+	r_s1=((d)/(1+(1/(np.sqrt(lambd)))))
+	R_s=(d-r_s1)
+	r.append(d)
+	r1.append(r3)
+	r2.append(R_s)
+	RSTAR.append(Rstar)
+	#magnetic field 
+	B=np.sqrt(sigma/1+sigma)*np.sqrt(Lp/c*fp)*(1/r_s)
+	b2=3*B
+	b1.append(b2)
+	#gyro freq
+	v_g=(e_c*B)/(2*pi*m_e)
+	#critical frequency
+	v_c=((E/(m_e*(c**2)))**2)*v_g
+	#user input for frequency
+	v=0.01*MeV
+	x=v/v_c
+	F_z=(quad(lambda x: scipy.special.kv((5/3),x), x, np.inf))
+	J_v=(2*pi*np.sqrt(3)*(e_c**3)*B*np.sin(alpha)*x*F_z[0])/(8*(pi**2)*epsilon*c*m_e)
+	jv1.append(J_v)
+	#powerlaw spec
+	spec=k2*(B**(alpha_s+1))*(v**(-alpha_s))
+	flux.append(spec)
+
+
+
+jv=np.array(jv1)
+d1=(a*(1-e**2))/(1+e*np.cos(0))
+d2=(a*(1-e**2))/(1+e*np.cos(pi))
+print("the semimajor axis is: ", a, " meters.\nthe separation at periastron is :", d1, "meters.\nthe separation at apiastron is :", d2, "meters" )
+print("the ratio of the semimajor axis to the sum of the separations over 2 :", ((d1+d2)/2)/a)
+# plotting the points 
+f=plt.figure(1)
+plt.plot(theta/(2*pi), (b1))
+plt.yscale("log")
+plt.xlabel('phase')
+plt.ylabel('Gauss')
+g=plt.figure(2)
+plt.plot(theta/(2*pi), (r),"g", label="separation of stars")
+plt.plot(theta/(2*pi), (r1),"r", label="shock front radius from pulsar")
+plt.plot(theta/(2*pi), (r2),"b", label="shock front radius from Be star")
+plt.plot(theta/(2*pi), (RSTAR),"b--", label="radius of Be star")
+plt.yscale("log")
+plt.legend()
+plt.xlabel('phase')
+plt.ylabel('distance (cm)')
+# function to show the plot 
+plt.show() 
