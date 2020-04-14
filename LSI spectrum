@@ -1,0 +1,178 @@
+#thinshell model
+#be careful of the iterator as changing it can affect speed.
+import cmath as cm
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+import time
+from datetime import datetime
+from sigfig import round
+startTime = datetime.now()
+0.00269592553450529, 
+0.003840425751769558,
+0.005889292241542931,
+0.009866416108792995,
+0.01628793295948442,
+0.019440244091518476
+#frequency 10kev
+keV=2.41799050402417E+17
+specx=[2.69592553450529, 3.840425751769558,5.889292241542931,\
+		9.866416108792995,16.28793295948442,19.440244091518476]
+specy=[0.00047608659175623334, 0.0002958519118851455, 0.0001280672301102814,\
+		 0.00006455313751207947, 0.00003253843749931233, 0.000019465080240770033]
+
+specx1=[5.0405663850534905,5.236104006025389,5.508670957155557,5.795426461981927,6.020247209557802,6.253789380634107,\
+		7.0996946307946835,8.162923566943935,9.03488990909349,10.127672332469464,11.068203487388525,12.888216932929076,\
+		13.907551880642234,17.03746429399559,19.09816915113337]
+specy1=[0.004702888392925439, 0.004192828729422718, 0.0037998992309791492, 0.0032784571796945832, 0.002922886597071659,\
+ 		0.002605880019496553, 0.0020375900402011884, 0.001673580949649224, 0.0013302449654404986, 0.0010065816358878637,\
+ 		0.0009122501850092619, 0.0007492795414305886, 0.0005858767554618422, 0.00045810882802849433, 0.00034664587764772806]
+
+specx2=[20.60865204837178,26.560877829466854,36.47400649253024,47.60865917562326, 71.44872617330677,108.59571077367842,\
+		192.19697875063218,292.12231811315525,396.09206598200853]
+specy2=[0.0006790610676011354, 0.0003824908784128027, 0.00019207718553600463, 0.00010469911723003546, 0.00004389854666672902,\
+		 0.000017522244804127872, 0.000004796358988986954, 0.0000019783188827841664, 0.000001026587593425054]
+
+
+#electron number
+N=3.4*10**18
+pi=np.pi
+vopti=0.000002*keV
+v=np.linspace(2,20,20)
+v1=np.linspace(4,20,20)
+v2=np.linspace(20,400,20)
+angle=np.linspace(0,2*pi,720)
+#spectral index
+alpha=0.3
+photon=2*alpha+1
+alpha1=0.5
+photon1=2*alpha1+1
+alpha2=0.6
+photon2=2*alpha2+1
+pi=np.pi
+deg2rad=pi/180
+
+i=20*deg2rad
+
+#speed of light in cm
+c=2.9979*10**10
+#radius of the sun in cm
+rsun=69.534*10**9
+#semi major axis (cm)
+a=8.64*rsun/np.sin(i)
+print(a)
+#eccentricty
+e=0.54
+#spindown luminosity in ergs/s
+Lp=4*10**35
+#mass outflow of be star in gs
+M_1=(10**-7)*(1.989*10**30)*(3.154*10**7)
+#velcotiy of stellar surface in cm/s
+v_o=1*10**7
+#fp fraction of sky (1)
+fp=1
+#fraction of sky fw
+fw=1
+#magnetization unitless
+sigma=0.02
+#labda factor
+#massflow=800
+#lambd=(40*fw)/(fp*massflow)
+def d(theta):
+	d=a*(1-e**2)/(1+e*np.cos(theta))
+	return d
+theta3=0
+theta4=2*pi
+param=2000
+sigd=35*deg2rad
+def r_s(theta):
+	#mass outflow param kinda, check notes
+	disk=param*(np.exp(-((theta-theta3)**2)/(2*sigd**2))+np.exp(-((theta-theta4)**2)/(2*sigd**2)))
+	massflow=200+disk
+
+	lambd=44*fw/(massflow*fp)
+	#distance to shock from pulsar
+	r_s=d(theta)*np.sqrt(lambd)/(np.sqrt(lambd)+1)	
+	return r_s
+
+def R(theta,zeta):
+	R=(r_s(theta)/np.sin(zeta))*np.sqrt(3*(1-zeta/np.tan(zeta)))
+	return R
+def Ru(theta,zeta):
+	Ru=np.sqrt(((d(theta)-R(theta,zeta)*np.cos(zeta))**2)+(R(theta,zeta)*np.sin(zeta))**2)
+	return Ru 
+def ang (binalp,pulphi,phi):
+	ang=np.sqrt((np.cos(binalp)**2)+(np.sin(binalp)**2)*(np.cos(phi-pulphi)**2))
+	return ang
+def Tang (binalp,pulphi,phi):
+	tang=(np.sin(binalp)**2)*np.cos(phi-pulphi)*np.sin(phi-pulphi)
+	return tang
+def mag ():
+	mag=np.sqrt(sigma*c*Lp)
+	return mag
+def neta (theta2,theta1):
+	neta=quad(lambda theta: np.sin(theta)/np.sin(theta),theta1, theta2)
+	return neta[0]
+def Bp (theta,zeta,phi):
+	Bp=mag()*zeta*ang(binalp,pulphi,phi)/(v_o*(Ru(theta,zeta)/neta(theta2,theta1)))
+	return Bp
+def Bu (theta,zeta,phi):
+	Bu=-mag()*zeta*Tang(binalp,pulphi,phi)/\
+	((np.sin(theta2)-np.sin(theta1))*Ru(theta,zeta)*v_o*ang(binalp,pulphi,phi))
+	return Bu
+
+binalp=0
+pulphi=0
+theta1=0.18074971818177574
+theta2=0.18094971833470024
+#B=dblquad(lambda y, x:Bp(x,y)+Bu(x,y),1*pi/180,179*pi/180,lambda y: 0,2*pi)
+
+#jv=(2.5*10**-3)*(v)**-photon
+
+jv=(2.5*10**-3)*(v)**-photon
+jv1=(1.3*10**-1)*(v1)**-photon1
+jv2=(5*10**-1)*(v2)**-photon2
+j=[]
+j1=[]
+j2=[]
+val=0
+rs=[]
+H=[]
+dis=[]
+Rdis=[]
+rstar=[]
+for n in angle:
+	disp=d(n)
+	r=r_s(n)
+	Rdisp=disp-r
+	dis.append(disp)
+	Rdis.append(Rdisp)
+	rs.append(r)
+	rstar.append(10*rsun)
+	B2=np.sqrt(sigma*Lp/(c*fp))*(1/r_s(n))
+	B=np.sqrt(sigma/(1+sigma))*np.sqrt(Lp/(c*fp))*(1/r_s(n))
+	
+plt.figure(1)
+plt.plot((specx),(specy),"ro", label="spectrum data r")
+plt.plot((specx1),(specy1),"bo", label="spectrum data b")
+plt.plot((specx2),(specy2),"go", label="spectrum data g")
+plt.plot((v),(jv),"r",label="calculated power law r")
+plt.plot((v1),(jv1),"b",label="calculated power law b")
+plt.plot((v2),(jv2),"g",label="calculated power law g")
+plt.loglog()
+plt.xlabel("keV")
+plt.ylabel("dN/dE ph/(keV cm^2 s)")
+plt.legend()
+
+plt.figure(2)
+plt.plot(angle/(2*pi),rs,"r", label="distance to the apex from the pulsar")
+plt.plot(angle/(2*pi),dis,"b", label="binary separation")
+plt.plot(angle/(2*pi),Rdis,"g", label="distance to the apex from the B(e) star")
+plt.plot(angle/(2*pi),rstar,"g--", label="B(e) star radius")
+plt.yscale("log")
+plt.xlabel("phase")
+plt.ylabel("distance (cm)")
+plt.legend()
+plt.show()
