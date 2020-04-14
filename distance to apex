@@ -1,0 +1,162 @@
+#thinshell model
+#be careful of the iterator as changing it can affect speed.
+import cmath as cm
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+import time
+from datetime import datetime
+startTime = datetime.now()
+
+#constants
+pi=np.pi
+deg2rad=pi/180
+#speed of light in cm
+c=2.9979*10**10
+#right accension
+Ra=40.13*deg2rad
+#declination
+Dec=61.2294*deg2rad
+
+#degrees to periastron 138.678
+omega=80*deg2rad
+#angle of nearest acsending node 310
+omicron=11*deg2rad
+#radius of the sun in cm
+rsun=69.534*10**9
+
+#eccentricity
+e=0.5
+#electron number
+k=4*10**9
+i=30*deg2rad
+#a=6.3*10**12
+a=9*rsun/np.sin(i)
+
+#k=1*10**9
+#frequency of 1 eV in hz
+MeV=2.41799050402417E+14
+v=2*MeV
+#spectral index
+alpha=0.25
+#spindown luminosity
+Lp=4*10**35
+#velcotiy of stellar surface
+vd=6*10**7
+sigma=0.02
+
+kpc=3.086*10**21
+#distance to system in kpc
+D=2*kpc
+#e_o is a unit vector along the line of sight from the pulsar to earth.
+
+angle=np.linspace(0,2*pi,720)
+
+LD=((2*alpha+1)+1)/((2*alpha+1)+7/3)
+
+
+dist=1/(4*pi*D**2)
+param=700
+fw=1
+fp=1
+Mdot=(1*10**-8)*1.989*10**33/(60*60*24*365)
+theta3=0*deg2rad
+theta4=2*pi
+sigd=30*deg2rad
+def d(theta):
+	d=a*(1-e**2)/(1+e*np.cos(theta))
+	return d
+
+def r_s(theta):
+	#mass outflow param kinda, check notes
+	disk=param*(np.exp((-(theta-theta3)**2)/(2*sigd**2))+np.exp((-(theta-theta4)**2)/(2*sigd**2)))
+	massflow=100+disk
+	#lambd=Lp/(c*vd*Mdot)
+	lambd=(40*fw)/(fp*massflow)
+	#distance to shock from pulsar
+	r_s=d(theta)/(1+1/(np.sqrt(lambd)))	
+	return r_s
+
+def R(zeta,theta):
+	if zeta < pi/180:
+		R=r_s(theta)
+	elif zeta > 179*pi/180:
+		zeta = 179*pi/180 
+		R=(r_s(theta)/np.sin(zeta))*np.sqrt(3*(1-zeta/np.tan(zeta)))
+	else:
+		R=(r_s(theta)/np.sin(zeta))*np.sqrt(3*(1-zeta/np.tan(zeta)))
+	return R
+def Ru(zeta,theta):
+	if zeta<0.5*pi/180:
+		Ru=d(theta)-r_s(theta)
+	elif zeta>179*pi/180:
+		zeta = 179*pi/180
+		Ru=np.sqrt(((d(theta)-R(zeta,theta)*np.cos(zeta))**2)+(R(zeta,theta)*np.sin(zeta))**2)
+	else:
+		Ru=np.sqrt(((d(theta)-R(zeta,theta)*np.cos(zeta))**2)+(R(zeta,theta)*np.sin(zeta))**2)
+	return Ru 
+def ang (binaryalp,pulsarphi,phi):
+	ang=np.sqrt((np.cos(binaryalp)**2)+(np.sin(binaryalp)**2)*(np.cos(phi-pulsarphi)**2))
+	return ang
+def Tang (binaryalp,pulsarphi,phi):
+	tang=(np.sin(binaryalp)**2)*np.cos(phi-pulsarphi)*np.sin(phi-pulsarphi)
+	return tang
+def mag ():
+	mag=np.sqrt(sigma*c*Lp)
+	return mag
+def neta (theta2,theta1,x):
+	neta=quad(lambda theta: x*np.tan(theta)/np.sin(theta),theta1, theta2)
+	return neta[0]
+def Bp (zeta,phi,theta):
+	if zeta < pi/180 or zeta >179*pi/180:
+		Bp = 0
+	else:
+		Bp=mag()*zeta*ang(binalp,pulphi,phi)/(vd*neta(calctheta2(theta),calctheta1(theta),(d(theta)-R(zeta,theta))))
+	return Bp
+def Bu (zeta,phi,theta):
+	Bu=mag()*zeta*Tang(binalp,pulphi,phi)/\
+	((np.sin(calctheta2(theta))-np.sin(calctheta1(theta)))*Ru(zeta,theta)*vd*ang(binalp,pulphi,phi))
+	return Bu
+def calctheta1(theta):	
+	theta1=np.arctan((R(pi/2,theta)-50*10**6)/d(theta))
+	return theta1
+def calctheta2(theta):
+	theta2=np.arctan((R(pi/2,theta)+50*10**6)/d(theta))
+	return theta2
+
+rs=[]
+Rs=[]
+ds=[]
+b=[]
+Rstar=[]
+for n in angle:
+	rs.append(r_s(n))
+	Rs.append(d(n)-r_s(n))
+	ds.append(d(n))
+	Rstar.append(7*rsun)
+	B=3*np.sqrt(sigma/1+sigma)*np.sqrt(Lp/c*fp)*(1/r_s(n))
+	b.append(B)
+
+plt.figure(1)
+plt.yscale("log")
+plt.plot(angle/(2*pi),rs,"r",label="distance to the apex from the pulsar")
+plt.plot(angle/(2*pi),Rs,"b",label="distance to the apex from the B(e) star")
+plt.plot(angle/(2*pi),ds,"g",label="binary separation")
+plt.plot(angle/(2*pi),Rstar,"b--",label="The radius of the B(e) star at the equator")
+plt.xlabel('phase')
+plt.legend()
+plt.ylabel('separation (cm)')
+plt.ylim(4e+11,6e+13)
+
+plt.figure(2)
+plt.yscale("log")
+plt.plot(angle/(2*pi),b,"r")
+plt.xlabel('phase')
+plt.legend()
+plt.ylabel('gauss')
+
+
+plt.show()
+
