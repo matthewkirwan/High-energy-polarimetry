@@ -1,0 +1,249 @@
+#thickshell model
+#make this efficient as possible, the extra dimension will affect efficiency
+import cmath as cm
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+import time
+from datetime import datetime
+startTime = datetime.now()
+
+#constants
+pi=np.pi
+deg2rad=pi/180
+#speed of light in cm
+c=2.9979*10**10
+#right accension
+Ra=195.7*deg2rad
+#declination
+Dec=-75.54*deg2rad
+#inclination
+i=36*deg2rad
+#degrees to periastron 138.678
+omega=138.678*deg2rad
+#angle of nearest acsending node 310
+omicron=310*deg2rad
+
+#semi major axis
+a=1296.58*c/np.sin(i)
+#eccentricity
+e=0.869931
+
+
+#electron number
+k=2*10**6
+#frequency 10kev
+MeV=2.41799050402417E+20
+v=0.01*MeV
+#spectral index
+alpha=1.9
+#spindown luminosity
+Lp=8*10**35
+#velcotiy of stellar surface
+vd=10**9
+sigma=0.02
+
+kpc=3.086*10**21
+#distance to system in kpc
+D=2.6*kpc
+#e_o is a unit vector along the line of sight from the pulsar to earth.
+
+#def Bphi(j,x):
+#	f=[(r_s*np.cos(j)/np.sin(j))*np.sqrt(3*(1-j/np.tan(j))),\
+#	-(r_s*np.sin(j)*np.sin(x)/np.sin(j))*np.sqrt(3*(1-j/np.tan(j))),\
+#	(r_s*np.sin(j)*np.cos(x)/np.sin(j))*np.sqrt(3*(1-j/np.tan(j)))]
+#	return f
+
+#line1=dblquad(lambda x,j: (r_s*np.cos(j)\
+#							/np.sin(j))*np.sqrt(3*(1-j/np.tan(j)))**2.9 ,0,3.14,\
+#							lambda x:0, lambda x:2*pi)
+#line2=dblquad(lambda x,j: (-r_s*np.sin(j)\
+#							*np.sin(x)/np.sin(j))*np.sqrt(3*(1-j/np.tan(j)))**2.9 ,\
+#							0,3.14,lambda x:0, lambda x:2*pi)
+#line3=dblquad(lambda  x,j: (r_s*np.sin(j)\
+#							*np.cos(x)/np.sin(j))*np.sqrt(3*(1-j/np.tan(j)))**2.9 \
+#							,0,3.14,lambda x:0, lambda x:2*pi)
+angle=np.linspace(0,pi,45)
+
+LD=((2*alpha+1)+1)/((2*alpha+1)+7/3)
+
+pulphi=0
+#pulsar=[0*deg2rad,30*deg2rad,60*deg2rad,80*deg2rad,90*deg2rad]
+binalpha=[0*deg2rad,10*deg2rad,60*deg2rad,90*deg2rad]
+
+theta3=(125*pi)/180
+theta4=theta3 + pi
+sigd=(35*pi)/180
+mag=np.sqrt(sigma*c*Lp)
+dist=1/(4*pi*D**2)
+param=700
+fw=1
+fp=1
+for binalp in binalpha:
+	pol=[]
+	for t in angle:
+		t=np.around(t,6)
+
+		#mass outflow param kinda, check notes
+		disk=param*(np.exp(-(((t-pi)-theta3)**2)/(2*sigd**2))+np.exp(-(((t-pi)-theta4)**2)/(2*sigd**2)))
+		massflow=100+0
+		lambd=(40*fw)/(fp*massflow)
+		#separation of binary
+		d=a*(1-e**2)/(1+e*np.cos(0))
+		#distance to shock from pulsar
+		r_s=d/(1+1/np.sqrt(lambd))
+
+
+		Q=0
+		U=0
+		I=0
+		#orbital angle or angle of observer
+		theta=t
+		#e_o=np.array([1,0,1])
+		#e_o=[-np.cos(Dec-i)*np.cos(Ra-omicron-omega-theta),\
+		#	-np.cos(Dec-i)*np.sin(Ra-omicron-omega-theta),\
+		#	-np.sin(Dec-i)]
+		e_o=[np.cos(theta),\
+			0,\
+			np.sin(theta)]
+		
+		
+		unit=np.sqrt(e_o[0]**2+e_o[1]**2+e_o[2]**2)
+		print(round((t/(pi))*100),"% done")
+		#if unit == 1.0:
+			#print("e_o is a unit vector")
+		#else:
+			#print("WARNING: e_o is NOT a unit vector") 
+		if e_o[2] == 0:
+			nz=0
+		else :
+			nz=e_o[1]/e_o[2]
+		#norb=np.array([0,1,0])
+		norb=np.array([0,1,nz*np.sin(t)])
+		abn=np.sqrt(norb[0]**2+norb[1]**2+norb[2]**2)
+		for x in np.linspace(0,pi,30):
+			x=np.around(x,6)
+			if x == 0 :
+				problem = 0
+				R=r_s-1000
+				Rmax=r_s+1000
+			elif x == 90*deg2rad:
+				problem = np.sqrt(3)
+			elif x == pi:
+				problem = np.sqrt(3*(1-x/np.tan(x-pi/180)))
+			elif np.isnan(np.sqrt(3*(1-(x/np.tan(x)))))==True:
+				problem = 0
+			else:
+				problem=np.sqrt(3*(1-(x/np.tan(x))))
+				R=((r_s-1000)/np.sin(x))*problem
+				Rmax=((r_s+1000)/np.sin(x))*problem
+
+			
+			xcomp=R*np.cos(x)
+			
+			neta=R*np.sin(x)
+			
+			fakeangle=np.arccos(xcomp/Rmax)
+			netamax=Rmax*np.sin(fakeangle)
+			buy=d-xcomp
+			theta2=np.around(np.arctan(netamax/buy),6)
+			theta1=np.around(np.arctan(neta/buy),6)
+			
+			for ne in np.linspace(neta, netamax,2):
+
+				Ru=np.sqrt(((buy)**2)+(ne)**2)
+				fakeang2=np.arctan(ne/buy)
+				fakeang1=90*deg2rad-fakeang2
+				bux=np.cos(fakeang1)
+				buz=np.sin(fakeang1)
+				for y in np.linspace(0,2*pi,90):
+					y=np.around(y,6)
+					ang=np.sqrt((np.cos(binalp)**2)+(np.sin(binalp)**2)*(np.cos(y-pulphi)**2))
+					if ne == 0:
+						bpconst=0
+					elif x == 0:
+						bpconst = 0
+						buconst = 0
+					else:
+						bpconst=(mag*x*ang*(np.sin(fakeang2)))/(vd*ne)
+					if np.around((np.sin(theta2)-np.sin(theta1))*Ru*vd*ang) == 0:
+						buconst = 0
+					else:
+						buconst=-mag*x*(np.sin(binalp)**2)*np.cos(y-pulphi)*np.sin(y-pulphi)\
+								/np.around((np.sin(theta2)-np.sin(theta1))*Ru*vd*ang)
+					
+					
+					bphi=(np.array([0,\
+									-ne*np.cos(y),\
+									-ne*np.sin(y)]))
+					normp=np.sqrt(bphi[0]**2+bphi[1]**2+bphi[2]**2)
+					bphi=bpconst*bphi/normp
+					
+					bu=(np.array([ne,\
+								buy*np.sin(y),\
+								-buy*np.cos(y)]))
+					normb=np.sqrt(bu[0]**2+bu[1]**2+bu[2]**2)
+					bu=buconst*bu/normb
+
+					b=bphi+bu		
+					
+					e1=np.cross(b,e_o)
+
+					abe=np.sqrt(e1[0]**2+e1[1]**2+e1[2]**2)
+					#problem is here with arbitrary fixed vector
+					
+					kai=np.arccos(np.dot(e1,norb)/(abe*abn))
+					if np.isnan(kai) == True:
+						kai = 0
+					
+					jv=k*(np.around((bpconst+buconst),6)**(alpha+1))*v**(-alpha)
+					
+					Ie=dist*jv
+					Qe=dist*LD*jv*np.cos(2*kai)
+					Ue=dist*LD*jv*np.sin(2*kai)
+
+					if np.isnan(Ie) == True:
+						I=I+0
+					else:
+						I=I+Ie
+					if np.isnan(Qe) == True:
+						Q=Q+0
+					else:
+						Q=Q+Qe
+					if np.isnan(Ue) == True:
+						U=U+0
+					else:
+						U=U+Ue
+			
+		polar=np.sqrt(Q**2+U**2)/I
+		
+		
+		pol.append(polar)
+	if binalp == 0*deg2rad:
+		plt.plot(angle*180/pi,pol,"r",label="alpha=0, pulphi= 0")
+	elif binalp == 10*deg2rad:
+		plt.plot(angle*180/pi,pol,"r--",label="alpha=10, pulphi= 0")
+	elif binalp == 60*deg2rad:
+		plt.plot(angle*180/pi,pol,"g",label="alpha=60, pulphi= 0")
+	elif binalp == 90*deg2rad:
+		plt.plot(angle*180/pi,pol,"g--",label="alpha=90, pulphi= 0")
+	
+	if pulphi == 0*deg2rad and binalp == 45*deg2rad :
+		plt.plot(angle*180/pi,pol,"r",label="alpha=45, pulphi= 0")
+	elif pulphi == 30*deg2rad:
+		plt.plot(angle*180/pi,pol,"r--",label="alpha=45, pulphi= 30")
+	elif pulphi== 60*deg2rad:
+		plt.plot(angle*180/pi,pol,"g",label="alpha=45, pulphi= 60")
+	elif pulphi == 80*deg2rad:
+		plt.plot(angle*180/pi,pol,"g--",label="alpha=45, pulphi= 80")
+	elif pulphi == 90*deg2rad:
+		plt.plot(angle*180/pi,pol,"g--",label="alpha=45, pulphi= 90")
+print("time taken to execute: ",datetime.now() - startTime)
+
+plt.legend()
+plt.xlabel('angle of observer')
+plt.ylabel('degree of polarization')
+plt.ylim(0,1)
+plt.show()
