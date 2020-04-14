@@ -1,0 +1,75 @@
+#model of polarized emission from a synchrotron source
+import cmath as cm
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+#imaginary i
+i=cm.sqrt(-1)
+pi=np.pi
+#radius of curvature
+
+#speed of light m/s
+c=2.9979*10**8
+#relativistic parameter
+gamma=10
+#permitivity of free space
+epsilon=8.85418782*10**-12
+#pitch angle
+alpha=pi/2
+#mass of electron in kgs
+m_e=9.1*10**-31
+#magnetic field in tesla
+B=1*10**-4
+v=0.1*c
+E=gamma*m_e*c**2
+omega_r=(np.e*B*c**2)/E
+omega=(np.e*B)/(gamma*m_e)
+
+a=v/(omega_r*np.sin(alpha))
+
+
+omega_c=(3*c*gamma**3)/(2*a)
+x=omega/omega_c
+#kparsec in m
+kpc=3.086*10**19
+#distance to system in kpc
+D=2.6*kpc
+#z=certain height in the jet
+z=((3*omega)/(2*omega_c))**(2/3)
+#make a method to get the single integral, 
+#and double integral
+#y integral then x then dx dy
+#dblquad(lambda x, y: function, y low lim, y high lim, lambda x: low lim, lambda x: high lim)
+#dblquad(lambda x, y: x*y, 0, 0.5, lambda x: 0, lambda x: 1-2*x)
+ml=0
+K=(scipy.special.kv((5/3), ml))
+F_z=(quad(lambda x: K, x, np.inf))
+f_z=x*F_z[0]
+J_omega=((np.sqrt(3)*np.exp(3)*B*np.sin(alpha))/(8*(pi**2)*epsilon*c*m_e))*f_z
+#the factor before the integral for I,Q,U
+factor=(1/(4*pi*D**2))
+#intensity of components
+
+
+#Ie=factor*J_omega
+Qe=3
+Ue=3
+#degree of polarization
+#p=np.sqrt(Qe**2+Ue**2)/Ie
+#instrinsic polarization
+alpha1=0 
+
+#complex linear polarization
+#P=p*np.exp(2*i*alpha1)
+
+# plotting the points 
+plt.ylim([0,1])
+#uncomment this
+#plt.plot(alpha, P)
+  
+# function to show the plot 
+#plt.show() 
+print("x is :", x)
+print("modified bessel function is :", K)
+print("Jv is :", J_omega)
