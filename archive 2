@@ -1,0 +1,117 @@
+#better model
+#hopefully this model will use more solid maths
+import cmath as cm
+import math
+import numpy as np
+import matplotlib.ticker as tck
+import matplotlib.pyplot as plt
+from scipy.integrate import quad, dblquad
+import scipy
+#imaginary i
+i=cm.sqrt(-1)
+pi=np.pi
+#phase of orbit
+phi=np.arange(start=0, stop=2*pi, step=(2*pi)/360)
+theta=phi+pi
+#phi=0
+#speed of light (m/s)
+c=2.9979*10**8
+#permitivity of free space
+epsilon=8.85418782*10**-12
+#inclination
+I=0.610865
+#semi major axis (m)
+a=(1296.58*c)/np.sin(I)
+#eccentricty
+e=0.869931
+#spindown luminosity
+Lp=8*10**28
+#mass outflow of be star
+M_1=(10**-8)*(1.989*10**30)*(3.154*10**7)
+#velcotiy of stellar surface
+v_o=10**5
+#fp fraction of sky (1)
+fp=1
+#fraction of sky fw
+fw=0.125
+#magnetization
+sigma=0.02
+#mass and charge of electron
+m_e=9.1*10**-31
+e_c=1.6*10**-19
+#pitch angle
+alpha=pi/2
+#realtivistic factor gamma
+gamma=10**6
+#kinetic energy of relativistic electrons
+E=gamma*m_e*(c**2)
+#spectral index
+alpha_s=1.9
+#kparsec in cm
+kpc=3.086*10**21
+#distance to system in kpc
+D=2.6*kpc
+
+jv1=[]
+#labda factor
+lambd=(Lp*fw)/(M_1*c*fp*v_o*(1+sigma))
+#separation of binary
+
+k=10**-30
+k1=10**140
+k2=2.5*10**15
+j1=[]
+p=(2*alpha_s)+1
+
+#MeV to Hz
+MeV=2.41799050402417E+20
+sp=[]
+av1=[]
+p1=[]
+pol=[]
+r=[]
+rs=[]
+Rs=[]
+for n in theta:
+	d=(a*(1-e**2))/(1+e*np.cos(n-pi))
+	r_s=((d)*(np.sqrt(lambd)))/(1+(np.sqrt(lambd)))
+	r.append(d)
+	R_s=d-r_s
+	B=np.sqrt(sigma/1+sigma)*np.sqrt(Lp/c*fp)*(1/r_s)
+	av=0.2*np.sin(n-pi/2)+1.7
+	av1.append(-1*av)
+	spec=k2*(B**(av+1))*(MeV**(-av))
+	p1=((2*av)+1)
+	pol.append((p1+1)/(p1+7/3))
+	sp.append(spec)
+	rs.append(r_s)
+	Rs.append(R_s)
+#A=(2*n*(m_e**2)*(c**4))/(3*v_g*np.sin(alpha))
+
+#distance to shock front
+
+
+#gyro freq
+v_g=(e_c*B)/(2*pi*m_e)
+#critical frequency
+v_c=((E/(m_e*(c**2)))**2)*v_g
+v=np.arange(start=0.001*MeV, stop=(10**4)*MeV, step=0.01*MeV)
+v2=np.arange(start=0.001*MeV/MeV, stop=(10**4)*MeV/MeV, step=(0.01*MeV)/MeV)
+
+J_1=k1*(B**(alpha_s+1))*(v_c**(-alpha_s))
+j1.append(J_1)
+jv=(1/(4*pi*D**2))*np.array(j1)
+
+
+
+
+plt.plot(phi/(2*pi), np.log10(r))
+
+plt.plot(phi/(2*pi), np.log10(rs))
+
+plt.plot(phi/(2*pi), np.log10(Rs))
+plt.xlabel('phase')
+plt.legend()
+plt.ylabel('degree of polarisation')
+plt.show()
+
